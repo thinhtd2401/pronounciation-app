@@ -4,5 +4,130 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   // 'Mở đầu', 'Nguyên âm', 'Phụ âm', 'Nâng cao'
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lessons   Lesson[]
+}
+
+model Lesson {
+  id          String         @id @default(cuid())
+  code        String         // 'Bài 1', 'Bài 2', 'Intro'
+  title       String         // 'Âm /i:/'
+  phoneme     String?        // '/i:/'
+  order       Int            @default(0)
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  videos      Video[]
+  notes       UserNote[]
+  progress    StudyProgress[]
+  planItems   PlanItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Video {
+  id             String          @id @default(cuid())
+  lessonId       String
+  lesson         Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  title          String          // 'Âm /i:/', 'Nhóm ea', 'Nhóm ee'
+  groupName      String?         // 'Nhóm ea'
+  youtubeUrl     String
+  youtubeId      String          // 'okuNL2IdgZo'
+  isShort        Boolean         @default(false)
+  order          Int             @default(0)
+  viewCount      Int             @default(0)
+  durationSeconds Int            @default(0)
+  updatedNotes   String?         // Dữ liệu cột 'Update 10/2026'
+  teacherNotes   String?         // Dữ liệu cột 'cô Linh'
+  dailyLogs      DailyLog[]
+  progress       StudyProgress[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model StudyProgress {
+  id             String    @id @default(cuid())
+  userId         String    @default("default_user")
+  lessonId       String
+  lesson         Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  videoId        String
+  video          Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  isCompleted    Boolean   @default(false)
+  lastPositionSec Int      @default(0)
+  watchCount     Int       @default(0)
+  lastWatchedAt  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, videoId])
+}
+
+model UserNote {
+  id        String   @id @default(cuid())
+  userId    String   @default("default_user")
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  content   String   // Markdown / Note text
+  timestamp Int?     // Video timestamp marker (seconds)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DailyLog {
+  id              String   @id @default(cuid())
+  date            String   // YYYY-MM-DD
+  userId          String   @default("default_user")
+  videoId         String
+  video           Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  timeSpentSec    Int      @default(0)
+  viewsToday      Int      @default(1)
+  completedToday  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([date, userId, videoId])
+}
+
+model StudyPlan {
+  id             String     @id @default(cuid())
+  userId         String     @default("default_user")
+  title          String     // 'Plan 30 ngày cơ bản phát âm'
+  startDate      DateTime   @default(now())
+  targetDays     Int        @default(30)
+  dailyMinutes   Int        @default(30)
+  isActive       Boolean    @default(true)
+  items          PlanItem[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model PlanItem {
+  id          String     @id @default(cuid())
+  planId      String
+  plan        StudyPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  scheduledDate String   // YYYY-MM-DD
+  isDone      Boolean    @default(false)
+  reviewStage Int        @default(0) // Spaced repetition interval (0: Learn, 1: Review day 1, 2: Day 3, 3: Day 7)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  userId      String   @default("default_user")
+  time        String   // '20:00'
+  daysOfWeek  String   // '1,2,3,4,5,6,7'
+  isEnabled   Boolean  @default(true)
+  channel     String   @default("browser") // 'browser' | 'notification'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
