@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import ClientLayout from '@/components/layout/ClientLayout';
 
 export const metadata: Metadata = {
   title: 'English Pronunciation Master',
@@ -12,9 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="antialiased min-h-screen">
-        {children}
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
